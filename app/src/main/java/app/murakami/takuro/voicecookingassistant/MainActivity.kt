@@ -37,6 +37,11 @@ class MainActivity : AppCompatActivity() {
 
         // setOnclickListener でクリック動作を登録し、クリックで音声入力が停止するようにする
         stopButton.setOnClickListener { speechRecognizer?.stopListening() }
+
+        registerIntentButton.setOnClickListener {
+            val toRegisterIntent =  Intent(this,Register::class.java)
+            startActivity(toRegisterIntent)
+        }
     }
 
     //RecognizerListenerの登録

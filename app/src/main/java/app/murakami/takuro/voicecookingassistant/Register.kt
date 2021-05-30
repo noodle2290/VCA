@@ -39,7 +39,7 @@ class Register : AppCompatActivity() {
             recipedata.method = method
         }
 
-        Toast.makeText(applicationContext,"保存しました",Toast.LENGTH_SHORT)
+        Toast.makeText(applicationContext,"保存しました",Toast.LENGTH_SHORT).show()
 
     }
 }
