@@ -1,11 +1,13 @@
 package app.murakami.takuro.voicecookingassistant
 
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Toast
 import io.realm.Realm
 import kotlinx.android.synthetic.main.activity_register.*
 import java.time.LocalDateTime
+import java.util.*
 
 class Register : AppCompatActivity() {
 
@@ -20,6 +22,8 @@ class Register : AppCompatActivity() {
             val ingredients = ingredientsEditText.text.toString()
             val method = methodEditText.text.toString()
             save(menu,ingredients,method)
+            val toRegisterIntent =  Intent(this,MainActivity::class.java)
+            startActivity(toRegisterIntent)
         }
     }
 
@@ -33,7 +37,8 @@ class Register : AppCompatActivity() {
         //保存する処理
 
         realm.executeTransaction{
-            val recipedata: RecipeData = it.createObject(RecipeData::class.java)
+            //val recipedata: RecipeData = it.createObject(RecipeData::class.java)
+            val recipedata = it.createObject(RecipeData::class.java, UUID.randomUUID().toString())
             recipedata.menu = menu
             recipedata.ingredients = ingredients
             recipedata.method = method

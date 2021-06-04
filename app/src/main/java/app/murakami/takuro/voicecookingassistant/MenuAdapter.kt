@@ -4,14 +4,16 @@ import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
 import android.widget.TextView
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import io.realm.OrderedRealmCollection
 import kotlinx.android.synthetic.main.item_list.view.*
 
-class MenuAdapter(    private val context: Context,
-                      private var menuList: OrderedRealmCollection<RecipeData>?,
-                      private val autoUpdate: Boolean) :
+class MenuAdapter(private val context: Context,
+                  private var menuList: OrderedRealmCollection<RecipeData>?,
+                  private val autoUpdate: Boolean) :
     RecyclerView.Adapter<MenuAdapter.MenuViewHolder>() {
 
     class MenuViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -30,4 +32,5 @@ class MenuAdapter(    private val context: Context,
     }
 
     override fun getItemCount(): Int = menuList?.size ?: 0
+
 }
