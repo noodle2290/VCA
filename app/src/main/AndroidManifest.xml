@@ -19,8 +19,12 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.VoiceCookingAssistant">
-        <activity android:name=".Register"/>
-        <activity android:name=".Recipe" />
+        <activity android:name=".Register"
+            android:label="Register"
+            />
+        <activity android:name=".Recipe"
+            android:label="Recipe"
+            />
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
