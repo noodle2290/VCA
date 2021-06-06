@@ -21,6 +21,7 @@ import java.util.*
 class MainActivity : AppCompatActivity() {
     //speechRecognizerの定義
     private var speechRecognizer : SpeechRecognizer? = null
+    //委譲プロパティを使って遅延初期化
     private val realm: Realm by lazy {
         Realm.getDefaultInstance()
     }
@@ -29,18 +30,25 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        //realmのデータをrecyclerview用に定義
         val menuList = readAll()
 
-        // リストが空だったときにダミーデータを生成する
-        if (menuList.isEmpty()) {
+        //adapterの定義　再読み込みできるようにvarにした
+        var adapter = MenuAdapter(this, menuList, object : MenuAdapter.OnItemClickListener {
+            override fun onItemClick(item: RecipeData) {
+                // クリック時の処理
+                Toast.makeText(applicationContext, item.menu + "です", Toast.LENGTH_SHORT).show()
+                val toRecipeIntent = Intent(this@MainActivity,Recipe::class.java)
 
-        }
+                toRecipeIntent.putExtra("MENU",item.menu)
 
-        var adapter = MenuAdapter(this, menuList, true)
+                startActivity(toRecipeIntent)
+            }
+        })
 
         recyclerView.setHasFixedSize(true)
         recyclerView.layoutManager = LinearLayoutManager(this)
-        recyclerView.adapter = adapter
+        recyclerView.adapter = adapter//アダプターを適用
 
         //起動時に音声入力許可をもらう
         val granted = ContextCompat.checkSelfPermission(this, RECORD_AUDIO)
@@ -58,17 +66,29 @@ class MainActivity : AppCompatActivity() {
         startButton.setOnClickListener { speechRecognizer?.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)) }
 
         // setOnclickListener でクリック動作を登録し、クリックで音声入力が停止するようにする
-        stopButton.setOnClickListener { speechRecognizer?.stopListening() }
+        //stopButton.setOnClickListener { speechRecognizer?.stopListening() }
 
+        //realmのデータを全消去
         deleteButton.setOnClickListener {
                 realm.executeTransaction {
                     realm.deleteAll()
             }
             Toast.makeText(applicationContext,"すべて消去しました", Toast.LENGTH_SHORT).show()
-            var adapter = MenuAdapter(this, menuList, true)
-            recyclerView.adapter = adapter
+            var adapter = MenuAdapter(this, menuList, object : MenuAdapter.OnItemClickListener {
+                override fun onItemClick(item: RecipeData) {
+                    // クリック時の処理
+                    Toast.makeText(applicationContext, item.menu + "です", Toast.LENGTH_SHORT).show()
+                    val toRecipeIntent = Intent(this@MainActivity,Recipe::class.java)
+
+                    toRecipeIntent.putExtra("MENU",item.menu)
+
+                    startActivity(toRecipeIntent)
+                }
+            })
+            recyclerView.adapter = adapter//ここで再読み込み
         }
 
+        //登録画面に飛ぶ
         registerIntentButton.setOnClickListener {
             val toRegisterIntent =  Intent(this,Register::class.java)
             startActivity(toRegisterIntent)
@@ -104,6 +124,7 @@ class MainActivity : AppCompatActivity() {
         private const val PERMISSIONS_RECORD_AUDIO = 1000
     }
 
+    //Realmのデータを読込
     fun readAll(): RealmResults<RecipeData> {
         return realm.where(RecipeData::class.java).findAll()//.sort("createdAt", Sort.ASCENDING)
     }

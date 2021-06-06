@@ -13,11 +13,12 @@ import kotlinx.android.synthetic.main.item_list.view.*
 
 class MenuAdapter(private val context: Context,
                   private var menuList: OrderedRealmCollection<RecipeData>?,
-                  private val autoUpdate: Boolean) :
+                  private var listener: OnItemClickListener) :
     RecyclerView.Adapter<MenuAdapter.MenuViewHolder>() {
 
     class MenuViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val menuTextView: TextView = view.menuTextView
+        val container : ConstraintLayout = view.container
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MenuViewHolder {
@@ -29,8 +30,16 @@ class MenuAdapter(private val context: Context,
         val menu: RecipeData = menuList?.get(position) ?: return
 
         holder.menuTextView.text = menu.menu
+        holder.container.setOnClickListener {
+            listener.onItemClick(menu)
+        }
     }
 
     override fun getItemCount(): Int = menuList?.size ?: 0
+
+    //インターフェースの作成
+    interface OnItemClickListener{
+        fun onItemClick(item: RecipeData)
+    }
 
 }
