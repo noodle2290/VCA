@@ -11,6 +11,7 @@ import android.speech.SpeechRecognizer
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.os.bundleOf
 import androidx.recyclerview.widget.LinearLayoutManager
 import io.realm.Realm
 import io.realm.RealmResults
@@ -107,8 +108,16 @@ class MainActivity : AppCompatActivity() {
             override fun onEndOfSpeech() { onResult("聞き取り終了") }
             override fun onError(error: Int) { onResult("エラー") }
             override fun onResults(results: Bundle) {
-                val stringArray = results.getStringArrayList(android.speech.SpeechRecognizer.RESULTS_RECOGNITION);
+                val stringArray = results.getStringArrayList(android.speech.SpeechRecognizer.RESULTS_RECOGNITION)
                 onResult(stringArray.toString())
+                val word = stringArray.toString()
+
+                val toRecipeIntent = Intent(this@MainActivity,Recipe::class.java)
+
+                Toast.makeText(applicationContext, word + "です", Toast.LENGTH_SHORT).show()
+                toRecipeIntent.putExtra("MENU",word)
+
+                startActivity(toRecipeIntent)
             }
         }
     }
