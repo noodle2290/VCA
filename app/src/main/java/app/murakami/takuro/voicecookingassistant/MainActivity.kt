@@ -17,19 +17,24 @@ import io.realm.Realm
 import io.realm.RealmResults
 import io.realm.Sort
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlinx.coroutines.runBlocking
 import java.util.*
 
 class MainActivity : AppCompatActivity() {
     //speechRecognizerの定義
     private var speechRecognizer : SpeechRecognizer? = null
+    private var offlineSpeechRecognizer : SpeechRecognizer? = null
     //委譲プロパティを使って遅延初期化
     private val realm: Realm by lazy {
         Realm.getDefaultInstance()
     }
+    var speechRecognizerRunning = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
 
         //realmのデータをrecyclerview用に定義
         val menuList = readAll()
@@ -59,12 +64,18 @@ class MainActivity : AppCompatActivity() {
 
         //SpeechRecognizerをActivityで使えるようにする
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(applicationContext)
+        offlineSpeechRecognizer = SpeechRecognizer.createSpeechRecognizer(applicationContext)
 
         //speechRecognizerがnullじゃなければtextViewに聞き取れた音声を表示する
         speechRecognizer?.setRecognitionListener(createRecognitionListenerStringStream { textView.text = it })
+        offlineSpeechRecognizer?.setRecognitionListener(createRecognitionListenerStringStream { offlineTextView.text = it })
 
         // setOnClickListener でクリック動作を登録し、クリックで音声入力が開始するようにする
-        startButton.setOnClickListener { speechRecognizer?.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)) }
+        startButton.setOnClickListener {
+            speechRecognizer?.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH))
+            speechRecognizerRunning = true
+        }
+        //offlineSpeechRecognizer?.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH))
 
         // setOnclickListener でクリック動作を登録し、クリックで音声入力が停止するようにする
         //stopButton.setOnClickListener { speechRecognizer?.stopListening() }
@@ -106,7 +117,9 @@ class MainActivity : AppCompatActivity() {
             override fun onEvent(eventType: Int, params: Bundle) { onResult("onEvent") }
             override fun onBeginningOfSpeech() { onResult("聞き取り中") }
             override fun onEndOfSpeech() { onResult("聞き取り終了") }
-            override fun onError(error: Int) { onResult("エラー") }
+            override fun onError(error: Int) { onResult("エラー")
+                    offlineSpeechRecognizer?.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH))
+            }
             override fun onResults(results: Bundle) {
                 val stringArray = results.getStringArrayList(android.speech.SpeechRecognizer.RESULTS_RECOGNITION)
 
@@ -115,22 +128,37 @@ class MainActivity : AppCompatActivity() {
 
                     onResult(stringArray[0].toString())
 
+                    if (speechRecognizerRunning) {
 
-                val toRecipeIntent = Intent(this@MainActivity,Recipe::class.java)
+                        val toRecipeIntent = Intent(this@MainActivity, Recipe::class.java)
 
-                Toast.makeText(applicationContext, word + "です", Toast.LENGTH_SHORT).show()
-                toRecipeIntent.putExtra("MENU",word)
+                        //Toast.makeText(applicationContext, word + "です", Toast.LENGTH_SHORT).show()
+                        toRecipeIntent.putExtra("MENU", word)
 
-                startActivity(toRecipeIntent)
+                        startActivity(toRecipeIntent)
+                        speechRecognizerRunning = false
+                    }else{
+                        if (word == "レシピ見せて"){
+                            speechRecognizer?.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH))
+                            speechRecognizerRunning = true
+                        }else{
+                            offlineSpeechRecognizer?.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH))
+                        }
+                    }
                 }
             }
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        offlineSpeechRecognizer?.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH))
+    }
     //アプリを閉じたらspeechRecognizerを閉じる
     override fun onDestroy() {
         super.onDestroy()
         speechRecognizer?.destroy()
+        offlineSpeechRecognizer?.destroy()
         realm.close()
     }
 
