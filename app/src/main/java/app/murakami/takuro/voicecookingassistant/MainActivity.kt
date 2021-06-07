@@ -109,8 +109,12 @@ class MainActivity : AppCompatActivity() {
             override fun onError(error: Int) { onResult("エラー") }
             override fun onResults(results: Bundle) {
                 val stringArray = results.getStringArrayList(android.speech.SpeechRecognizer.RESULTS_RECOGNITION)
-                onResult(stringArray.toString())
-                val word = stringArray.toString()
+
+                if (stringArray != null) {
+                    var word = stringArray[0]
+
+                    onResult(stringArray[0].toString())
+
 
                 val toRecipeIntent = Intent(this@MainActivity,Recipe::class.java)
 
@@ -118,6 +122,7 @@ class MainActivity : AppCompatActivity() {
                 toRecipeIntent.putExtra("MENU",word)
 
                 startActivity(toRecipeIntent)
+                }
             }
         }
     }
