@@ -23,7 +23,7 @@ import java.util.*
 class MainActivity : AppCompatActivity() {
     //speechRecognizerの定義
     private var speechRecognizer : SpeechRecognizer? = null
-    private var offlineSpeechRecognizer : SpeechRecognizer? = null
+    private var triggerSpeechRecognizer : SpeechRecognizer? = null
     //委譲プロパティを使って遅延初期化
     private val realm: Realm by lazy {
         Realm.getDefaultInstance()
@@ -64,41 +64,11 @@ class MainActivity : AppCompatActivity() {
 
         //SpeechRecognizerをActivityで使えるようにする
         speechRecognizer = SpeechRecognizer.createSpeechRecognizer(applicationContext)
-        offlineSpeechRecognizer = SpeechRecognizer.createSpeechRecognizer(applicationContext)
+        triggerSpeechRecognizer = SpeechRecognizer.createSpeechRecognizer(applicationContext)
 
         //speechRecognizerがnullじゃなければtextViewに聞き取れた音声を表示する
         speechRecognizer?.setRecognitionListener(createRecognitionListenerStringStream { textView.text = it })
-        offlineSpeechRecognizer?.setRecognitionListener(createRecognitionListenerStringStream { offlineTextView.text = it })
-
-        // setOnClickListener でクリック動作を登録し、クリックで音声入力が開始するようにする
-        startButton.setOnClickListener {
-            speechRecognizer?.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH))
-            speechRecognizerRunning = true
-        }
-        //offlineSpeechRecognizer?.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH))
-
-        // setOnclickListener でクリック動作を登録し、クリックで音声入力が停止するようにする
-        //stopButton.setOnClickListener { speechRecognizer?.stopListening() }
-
-        //realmのデータを全消去
-        deleteButton.setOnClickListener {
-                realm.executeTransaction {
-                    realm.deleteAll()
-            }
-            Toast.makeText(applicationContext,"すべて消去しました", Toast.LENGTH_SHORT).show()
-            var adapter = MenuAdapter(this, menuList, object : MenuAdapter.OnItemClickListener {
-                override fun onItemClick(item: RecipeData) {
-                    // クリック時の処理
-                    Toast.makeText(applicationContext, item.menu + "です", Toast.LENGTH_SHORT).show()
-                    val toRecipeIntent = Intent(this@MainActivity,Recipe::class.java)
-
-                    toRecipeIntent.putExtra("MENU",item.menu)
-
-                    startActivity(toRecipeIntent)
-                }
-            })
-            recyclerView.adapter = adapter//ここで再読み込み
-        }
+        triggerSpeechRecognizer?.setRecognitionListener(createRecognitionListenerStringStream { offlineTextView.text = it })
 
         //登録画面に飛ぶ
         registerIntentButton.setOnClickListener {
@@ -117,8 +87,9 @@ class MainActivity : AppCompatActivity() {
             override fun onEvent(eventType: Int, params: Bundle) { onResult("onEvent") }
             override fun onBeginningOfSpeech() { onResult("聞き取り中") }
             override fun onEndOfSpeech() { onResult("聞き取り終了") }
-            override fun onError(error: Int) { onResult("エラー")
-                    offlineSpeechRecognizer?.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH))
+            override fun onError(error: Int) { onResult("聞き取れませんでしたもう一度レシピ見せてと話しかけてください")
+                triggerSpeechRecognizer?.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH))
+                speechRecognizerRunning = false
             }
             override fun onResults(results: Bundle) {
                 val stringArray = results.getStringArrayList(android.speech.SpeechRecognizer.RESULTS_RECOGNITION)
@@ -132,17 +103,16 @@ class MainActivity : AppCompatActivity() {
 
                         val toRecipeIntent = Intent(this@MainActivity, Recipe::class.java)
 
-                        //Toast.makeText(applicationContext, word + "です", Toast.LENGTH_SHORT).show()
                         toRecipeIntent.putExtra("MENU", word)
 
                         startActivity(toRecipeIntent)
                         speechRecognizerRunning = false
                     }else{
-                        if (word == "レシピ見せて"){
+                        if (Regex(word).containsMatchIn("レシピ見せて")){
                             speechRecognizer?.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH))
                             speechRecognizerRunning = true
                         }else{
-                            offlineSpeechRecognizer?.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH))
+                            triggerSpeechRecognizer?.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH))
                         }
                     }
                 }
@@ -152,13 +122,18 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        offlineSpeechRecognizer?.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH))
+        triggerSpeechRecognizer?.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH))
+        textView.text = "レシピ見せてと話しかけてください"
+    }
+
+    override fun onPause() {
+        super.onPause()
     }
     //アプリを閉じたらspeechRecognizerを閉じる
     override fun onDestroy() {
         super.onDestroy()
         speechRecognizer?.destroy()
-        offlineSpeechRecognizer?.destroy()
+        triggerSpeechRecognizer?.destroy()
         realm.close()
     }
 
