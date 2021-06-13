@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.util.Log
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -70,6 +71,9 @@ class MainActivity : AppCompatActivity() {
         speechRecognizer?.setRecognitionListener(createRecognitionListenerStringStream { textView.text = it })
         triggerSpeechRecognizer?.setRecognitionListener(createRecognitionListenerStringStream { offlineTextView.text = it })
 
+        //speechRecognizer?.stopListening()
+        triggerSpeechRecognizer?.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH))
+
         //登録画面に飛ぶ
         registerIntentButton.setOnClickListener {
             val toRegisterIntent =  Intent(this,Register::class.java)
@@ -90,6 +94,19 @@ class MainActivity : AppCompatActivity() {
             override fun onError(error: Int) { onResult("聞き取れませんでしたもう一度レシピ見せてと話しかけてください")
                 triggerSpeechRecognizer?.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH))
                 speechRecognizerRunning = false
+                var errorCode = ""
+                when (error) {
+                    SpeechRecognizer.ERROR_AUDIO -> errorCode = "Audio recording error"
+                    SpeechRecognizer.ERROR_CLIENT -> errorCode = "Other client side errors"
+                    SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> errorCode = "Insufficient permissions"
+                    SpeechRecognizer.ERROR_NETWORK -> errorCode = "Network related errors"
+                    SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> errorCode = "Network operation timed out"
+                    SpeechRecognizer.ERROR_NO_MATCH -> errorCode = "No recognition result matched"
+                    SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> errorCode = "RecognitionService busy"
+                    SpeechRecognizer.ERROR_SERVER -> errorCode = "Server sends error status"
+                    SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> errorCode = "No speech input"
+                }
+                Log.d("RecognitionListener", "onError:" + errorCode)
             }
             override fun onResults(results: Bundle) {
                 val stringArray = results.getStringArrayList(android.speech.SpeechRecognizer.RESULTS_RECOGNITION)
@@ -100,13 +117,21 @@ class MainActivity : AppCompatActivity() {
                     onResult(stringArray[0].toString())
 
                     if (speechRecognizerRunning) {
+                        var Recipedata = realm.where(RecipeData::class.java)
+                            .equalTo("menu", word)
+                            .findFirst();
+                        if (Recipedata != null){
 
-                        val toRecipeIntent = Intent(this@MainActivity, Recipe::class.java)
+                            val toRecipeIntent = Intent(this@MainActivity, Recipe::class.java)
 
-                        toRecipeIntent.putExtra("MENU", word)
+                            toRecipeIntent.putExtra("MENU", word)
 
-                        startActivity(toRecipeIntent)
+                            startActivity(toRecipeIntent)
+                        }else{
+                            textView.text = word + "は見つかりませんでした\n もう一度レシピ見せてと話しかけてください"
+                        }
                         speechRecognizerRunning = false
+                        triggerSpeechRecognizer?.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH))
                     }else{
                         if (Regex(word).containsMatchIn("レシピ見せて")){
                             speechRecognizer?.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH))
@@ -120,15 +145,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        triggerSpeechRecognizer?.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH))
+    override fun onPause() {
+        super.onPause()
         textView.text = "レシピ見せてと話しかけてください"
     }
 
-    override fun onPause() {
-        super.onPause()
+    override fun onStop() {
+        super.onStop()
     }
+
     //アプリを閉じたらspeechRecognizerを閉じる
     override fun onDestroy() {
         super.onDestroy()
