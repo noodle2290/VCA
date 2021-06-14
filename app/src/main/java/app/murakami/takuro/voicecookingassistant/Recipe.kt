@@ -35,6 +35,14 @@ class Recipe : AppCompatActivity() {
             }
             startActivity(toMainActivityIntent)
         }
+
+        editButton.setOnClickListener {
+            val toRegisterIntent = Intent(this, Register::class.java)
+
+            toRegisterIntent.putExtra("MENU", id)
+
+            startActivity(toRegisterIntent)
+        }
     }
 
 

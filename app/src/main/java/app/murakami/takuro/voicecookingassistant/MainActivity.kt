@@ -44,7 +44,7 @@ class MainActivity : AppCompatActivity() {
         var adapter = MenuAdapter(this, menuList, object : MenuAdapter.OnItemClickListener {
             override fun onItemClick(item: RecipeData) {
                 // クリック時の処理
-                Toast.makeText(applicationContext, item.menu + "です", Toast.LENGTH_SHORT).show()
+                //Toast.makeText(applicationContext, item.menu + "です", Toast.LENGTH_SHORT).show()
                 val toRecipeIntent = Intent(this@MainActivity,Recipe::class.java)
 
                 toRecipeIntent.putExtra("MENU",item.menu)
@@ -91,7 +91,7 @@ class MainActivity : AppCompatActivity() {
             override fun onEvent(eventType: Int, params: Bundle) { onResult("onEvent") }
             override fun onBeginningOfSpeech() { onResult("聞き取り中") }
             override fun onEndOfSpeech() { onResult("聞き取り終了") }
-            override fun onError(error: Int) { onResult("聞き取れませんでしたもう一度レシピ見せてと話しかけてください")
+            override fun onError(error: Int) { onResult("聞き取れませんでした\nもう一度レシピ見せてと話しかけてください")
                 triggerSpeechRecognizer?.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH))
                 speechRecognizerRunning = false
                 var errorCode = ""

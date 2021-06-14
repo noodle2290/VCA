@@ -17,13 +17,33 @@ class Register : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_register)
 
-        registerButton.setOnClickListener {
-            val menu = menuEditText.text.toString()
-            val ingredients = ingredientsEditText.text.toString()
-            val method = methodEditText.text.toString()
-            save(menu,ingredients,method)
-            val toRegisterIntent =  Intent(this,MainActivity::class.java)
-            startActivity(toRegisterIntent)
+        var recipeName = intent.getStringExtra("MENU")
+
+        if(recipeName != null){
+            var Recipedata = realm.where(RecipeData::class.java)
+                .equalTo("menu", "$recipeName")
+                .findFirst();
+
+            menuEditText.setText(Recipedata?.menu)
+            ingredientsEditText.setText(Recipedata?.ingredients)
+            methodEditText.setText(Recipedata?.method)
+            registerButton.setOnClickListener {
+                val menu = menuEditText.text.toString()
+                val ingredients = ingredientsEditText.text.toString()
+                val method = methodEditText.text.toString()
+                update(menu,ingredients,method,recipeName)
+                val toRegisterIntent =  Intent(this,MainActivity::class.java)
+                startActivity(toRegisterIntent)
+            }
+        }else{
+            registerButton.setOnClickListener {
+                val menu = menuEditText.text.toString()
+                val ingredients = ingredientsEditText.text.toString()
+                val method = methodEditText.text.toString()
+                save(menu,ingredients,method)
+                val toRegisterIntent =  Intent(this,MainActivity::class.java)
+                startActivity(toRegisterIntent)
+            }
         }
     }
 
@@ -46,5 +66,15 @@ class Register : AppCompatActivity() {
 
         Toast.makeText(applicationContext,"保存しました",Toast.LENGTH_SHORT).show()
 
+    }
+
+    fun update(menu:String, ingredients:String,method:String,recipeName:String){
+        realm.executeTransaction{
+            var recipedata = realm.where(RecipeData::class.java).equalTo("menu", "$recipeName")
+                .findFirst();
+            recipedata?.menu = menu
+            recipedata?.ingredients = ingredients
+            recipedata?.method = method
+        }
     }
 }
